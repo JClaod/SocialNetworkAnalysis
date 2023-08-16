@@ -1,13 +1,15 @@
 class Graph:
     def __init__(self):
-        self.adjacencyList = []
+        self.id_to_names = []
+        self.adjacencyList = {}
+        self.userKeys = 0
     
     def createNode(self, name):
-        self.adjacencyList.append(name, [])
-    
-    def addEdge(self, toName, fromName):
-        self.createNode(toName)
-        self.createNode(fromName)
-        self.adjacencyList
-    
+        id = self.userKeys
+        self.adjacencyList[id] = []
+        self.id_to_names.append([id, name])
+        self.userKeys += 1
 
+    def addEdge(self, toNode, fromNode):
+        self.adjacencyList[toNode].extend(fromNode)
+        self.adjacencyList[fromNode].extend(toNode)
