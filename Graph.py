@@ -48,6 +48,17 @@ class Graph:
         pos = nx.spring_layout(G)
         node_labels = nx.get_node_attributes(G, 'label')
 
+        # Use Louvain community detection
+        communities = nx.algorithms.community.greedy_modularity_communities(G)
+
+        cmap = plt.get_cmap('tab20')
+        node_colors = []
+        for node in G.nodes():
+            for i, community in enumerate(communities):
+                if node in community:
+                    node_colors.append(cmap(i % len(communities)))
+                    break
+
         def on_node_click(event):
             if event.inaxes is not None:
                 plt.clf()  # Clear the current figure
@@ -61,31 +72,33 @@ class Graph:
                         plt.text(x, y, f"ID: {node}\nLocal Degree: {self.localDegree(node)}", fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
 
                 if clicked_node is not None:
-                    # Highlight adjacent edges of the clicked node
                     highlighted_edges = [(clicked_node, adj_node) for adj_node in G.adj[clicked_node]]
 
-                    # Draw the graph with highlighted adjacent edges
-                    nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca())
+                    nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
                     nx.draw_networkx_edges(G, pos, edgelist=highlighted_edges, ax=plt.gca(), edge_color='red', width=2)
                     plt.title("Social Network Graph")
                     plt.text(0.5, -0.1, f"Total Edges: {self.edges}", transform=plt.gca().transAxes, ha="center")
                     plt.draw()
-            
+
         def on_release(event):
             if event.inaxes is None:
                 plt.clf()  # Clear the current figure
-                nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca())
+                nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
                 plt.title("Social Network Graph")
                 plt.text(0.5, -0.1, f"Total Edges: {self.edges}", transform=plt.gca().transAxes, ha="center")
                 plt.draw()
-            
 
         fig = plt.figure(figsize=(10, 6))
+        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
 
-        # Draw the initial graph
-        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca())
+        legend_labels = []
+        for i, community in enumerate(communities):
+            legend_labels.append(f'Community {i+1}')
+        plt.legend(handles=[plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cmap(i % len(communities)), label=label) for i, label in enumerate(legend_labels)])
+
+
+        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
         plt.title("Social Network Graph")
-
         plt.text(0.5, -0.1, f"Total Edges: {self.edges}", transform=plt.gca().transAxes, ha="center")
 
         fig.canvas.mpl_connect('button_press_event', on_node_click)
@@ -124,50 +137,10 @@ class GraphTraversal:
         
         print("Distance to target: " + str(len(listOfPath)) + ", Path to target: " + str(listOfPath))
     
+    def hasPathTo(self, target):
+        if self.distTo[target] != float('inf'):
+            return True
+        return False
+
     def distanceToNode(self):
         return self.distTo
-
-class Louvain:
-    def __init__(self, graph):
-        self.graph = graph
-        self.community_assignment = {id: id for id in graph.adjacencyList}
-    
-    def modularity_gain(self, node, community):
-        degree_node = self.graph.localDegree(node)
-        degree_community = sum(self.graph.localDegree(neighbor) for neighbor in self.graph.adjacencyList[community])
-    
-        edges_between_communities = sum(1 for neighbor in self.graph.adjacencyList[node] if self.community_assignment[neighbor] == community)
-    
-        modularity_gain = (2 * edges_between_communities - degree_community * degree_node / (2 * self.graph.edges)) / (2 * self.graph.edges)
-    
-        return modularity_gain
-        
-    def move_node(self, node, target_community):
-        self.community_assignment[node] = target_community
-        
-    def find_best_community(self, node):
-        best_community = self.community_assignment[node]
-        best_gain = 0
-        
-        for neighbor in self.graph.adjacencyList[node]:
-            if self.community_assignment[neighbor] != self.community_assignment[node]:
-                gain = self.modularity_gain(node, self.community_assignment[neighbor])
-                if gain > best_gain:
-                    best_gain = gain
-                    best_community = self.community_assignment[neighbor]
-        
-        return best_community
-    
-    def apply_algorithm(self):
-        changed = True
-        
-        while changed:
-            changed = False
-            
-            for node in self.graph.adjacencyList:
-                current_community = self.community_assignment[node]
-                best_community = self.find_best_community(node)
-                
-                if best_community != current_community:
-                    self.move_node(node, best_community)
-                    changed = True
