@@ -2,6 +2,7 @@ import tkinter as tk
 import networkx as nx
 import matplotlib.pyplot as plt
 from Graph import Graph
+from Graph import GraphTraversal
 
 class GraphApp:
     def __init__(self, window, graph):
@@ -17,7 +18,9 @@ class GraphApp:
         self.visualize()
     
     def updateText(self, node):
-        newText = f"ID: {node}\nLocal Degree: {self.graph.localDegree(node)}"
+        traversal = GraphTraversal(self.graph, node)
+
+        newText = f"ID: {node}\nLocal Degree: {self.graph.localDegree(node)}\n\nCloseness Centrality: \n{traversal.distTo}"
         self.text_widget.insert("end", newText)
 
 
@@ -61,21 +64,23 @@ class GraphApp:
                     if dx**2 + dy**2 < 0.02:
                         clicked_node = node
                         self.updateText(clicked_node)
-                        plt.text(x, y, f"ID: {node}\nLocal Degree: {self.graph.localDegree(node)}", fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
 
                 if clicked_node is not None:
                     highlighted_edges = [(clicked_node, adj_node) for adj_node in G.adj[clicked_node]]
 
                     nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
-                    nx.draw_networkx_edges(G, pos, edgelist=highlighted_edges, ax=plt.gca(), edge_color='red', width=2)
-                    plt.title("Social Network Graph")
-                    plt.text(0.5, -0.1, f"Total Edges: {self.graph.edges}\n Average Global Degree: {self.graph.avgGlobalDegree()}", transform=plt.gca().transAxes, ha="center")
-                    plt.draw()
 
-                    legend_labels = []
-                    for i, community in enumerate(communities):
-                        legend_labels.append(f'Community {i+1}')
-                    plt.legend(handles=[plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cmap(i % len(communities)), label=label) for i, label in enumerate(legend_labels)])
+                    if all(highlighted_edges):  # Change made here
+                        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1000, font_size=10, ax=plt.gca(), node_color=node_colors)
+                        nx.draw_networkx_edges(G, pos, edgelist=highlighted_edges, ax=plt.gca(), edge_color='red', width=2)
+                        plt.title("Social Network Graph")
+                        plt.text(0.5, -0.1, f"Total Edges: {self.graph.edges}\n Average Global Degree: {self.graph.avgGlobalDegree()}", transform=plt.gca().transAxes, ha="center")
+                        plt.draw()
+
+                        legend_labels = []
+                        for i, community in enumerate(communities):
+                            legend_labels.append(f'Community {i+1}')
+                        plt.legend(handles=[plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=cmap(i % len(communities)), label=label) for i, label in enumerate(legend_labels)])
 
         def on_release(event):
             if event.inaxes is None:

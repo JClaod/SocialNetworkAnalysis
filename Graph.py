@@ -42,8 +42,7 @@ class GraphTraversal:
         self.distTo = {id: None for id in graph.adjacencyList}
         self.graph = graph
         self.source = source
-    
-    def shortestPath(self):
+
         self.distTo[self.source] = 0
         queue = deque([self.source])
 
