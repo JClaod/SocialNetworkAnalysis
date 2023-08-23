@@ -20,6 +20,9 @@ class Graph:
         self.adjacencyList[fromID].append(toID)
         self.edges += 1
     
+    def neighbors(self, id):
+        return self.adjacencyList[id]
+    
     def totalEdges(self):
         return self.edges
     
@@ -38,8 +41,8 @@ class Graph:
 class GraphTraversal:
     def __init__(self, graph, source):
         self.listOfPath = []
-        self.edgeTo = {id: float('inf') for id in graph.adjacencyList}
-        self.distTo = {id: None for id in graph.adjacencyList}
+        self.edgeTo = {id: None for id in graph.adjacencyList}
+        self.distTo = {id: float('inf') for id in graph.adjacencyList}
         self.graph = graph
         self.source = source
 
@@ -62,7 +65,7 @@ class GraphTraversal:
             listOfPath.append(self.edgeTo[target])
             target = self.edgeTo[target]
         
-        print("Distance to target: " + str(len(listOfPath)) + ", Path to target: " + str(listOfPath))
+        return listOfPath
     
     def hasPathTo(self, target):
         if self.distTo[target] != float('inf'):
@@ -71,3 +74,14 @@ class GraphTraversal:
 
     def distanceToNode(self):
         return self.distTo
+    
+    def closenessCentrality(self):
+        closeness = ""
+
+        for id in sorted(self.distTo):
+            if id == self.source:
+                continue
+            information = self.graph.id_to_names[id]
+            closeness += "-" + f'{information[1]}: {self.distTo[id]}' + "\n"
+        
+        return closeness
